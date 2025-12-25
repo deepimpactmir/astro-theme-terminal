@@ -8,6 +8,21 @@
   --radius: 0;
   --font-size: 1rem;
   --line-height: 1.54em;
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --background: #f6f1e6;
+  --foreground: #1f1c15;
+  --accent: #b77200;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --background: #1a170f;
+  --foreground: #eceae5;
+  --accent: #eec35e;
+  color-scheme: dark;
 }
 
 html {

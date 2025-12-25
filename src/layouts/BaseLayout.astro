@@ -36,6 +36,36 @@ const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL :
     
     <link rel="sitemap" href={`${base}sitemap-index.xml`} />
     <link rel="alternate" type="application/rss+xml" title="RSS" href={`${base}rss.xml`} />
+
+    <script>
+      (() => {
+        const storageKey = "terminal-theme";
+        const root = document.documentElement;
+        const themeWindow = window as typeof window & { __terminalTheme?: { applyTheme: (theme: "light" | "dark") => void; storageKey: string; systemPreference: MediaQueryList; } };
+        const systemPreference = window.matchMedia("(prefers-color-scheme: light)");
+
+        const applyTheme = (theme: "light" | "dark") => {
+          root.dataset.theme = theme;
+          root.style.colorScheme = theme === "light" ? "light" : "dark";
+        };
+
+        const resolveTheme = (): "light" | "dark" => {
+          const saved = localStorage.getItem(storageKey);
+          if (saved === "light" || saved === "dark") return saved;
+          return systemPreference.matches ? "light" : "dark";
+        };
+
+        applyTheme(resolveTheme());
+
+        systemPreference.addEventListener("change", (event) => {
+          if (!localStorage.getItem(storageKey)) {
+            applyTheme(event.matches ? "light" : "dark");
+          }
+        });
+
+        themeWindow.__terminalTheme = { applyTheme, storageKey, systemPreference };
+      })();
+    </script>
   </head>
   <body>
     <div class="container center">
@@ -48,19 +78,25 @@ const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL :
               </div>
             </a>
           </div>
-          <ul class="menu menu--mobile">
-            <li class="menu__trigger">Menu ▾</li>
-            <li>
-              <ul class="menu__dropdown">
-                <li><a href={`${base}about/`}>About</a></li>
-                <li><a href={`${base}posts/showcase/`}>Showcase</a></li>
-                <li><a href={`${base}posts/`}>Posts</a></li>
-                <li><a href={`${base}tags/`}>Tags</a></li>
-                <li><a href={`${base}posts/rich-content/`}>Rich Content</a></li>
-                <li><a href={`${base}posts/code-blocks-examples/`}>Code Examples</a></li>
-              </ul>
-            </li>
-          </ul>
+          <div class="header__controls">
+            <button class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle color theme">
+              <span class="theme-toggle__icon" aria-hidden="true">☾</span>
+              <span class="theme-toggle__label">Dark mode</span>
+            </button>
+            <ul class="menu menu--mobile">
+              <li class="menu__trigger">Menu ▾</li>
+              <li>
+                <ul class="menu__dropdown">
+                  <li><a href={`${base}about/`}>About</a></li>
+                  <li><a href={`${base}posts/showcase/`}>Showcase</a></li>
+                  <li><a href={`${base}posts/`}>Posts</a></li>
+                  <li><a href={`${base}tags/`}>Tags</a></li>
+                  <li><a href={`${base}posts/rich-content/`}>Rich Content</a></li>
+                  <li><a href={`${base}posts/code-blocks-examples/`}>Code Examples</a></li>
+                </ul>
+              </li>
+            </ul>
+          </div>
         </div>
         
         <nav class="navigation-menu">
@@ -149,6 +185,32 @@ const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL :
             
             dropdown.addEventListener("click", e => e.stopPropagation());
           }
+        });
+
+        type ThemeControls = { applyTheme: (theme: "light" | "dark") => void; storageKey: string };
+        const { __terminalTheme } = window as typeof window & { __terminalTheme?: ThemeControls };
+
+        const toggleButton = document.querySelector<HTMLButtonElement>(".theme-toggle");
+        const icon = toggleButton?.querySelector(".theme-toggle__icon");
+        const label = toggleButton?.querySelector(".theme-toggle__label");
+        const root = document.documentElement;
+        const applyTheme = __terminalTheme?.applyTheme;
+        const storageKey = __terminalTheme?.storageKey ?? "terminal-theme";
+
+        const updateButton = () => {
+          const isLight = root.dataset.theme === "light";
+          toggleButton?.setAttribute("aria-pressed", String(isLight));
+          if (icon) icon.textContent = isLight ? "☀" : "☾";
+          if (label) label.textContent = isLight ? "Light mode" : "Dark mode";
+        };
+
+        updateButton();
+
+        toggleButton?.addEventListener("click", () => {
+          const nextTheme = root.dataset.theme === "light" ? "dark" : "light";
+          applyTheme?.(nextTheme);
+          localStorage.setItem(storageKey, nextTheme);
+          updateButton();
         });
       })();
     </script>
